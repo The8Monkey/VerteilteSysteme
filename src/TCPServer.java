@@ -15,15 +15,19 @@ public class TCPServer {
         ServerSocket welcomeSocket = new ServerSocket(1234);
 
         while(true){
-            Socket conSocket = welcomeSocket.accept();
-            BufferedReader inFromClient =
-                    new BufferedReader(new InputStreamReader(conSocket.getInputStream()));
-            DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
-            inval = Integer.parseInt(inFromClient.readLine());
-            System.out.print("recieved: "+inval);
-            outval = Main.fibonacci(inval);
-            System.out.println("send: "+outval);
-            outToClient.writeBytes(outval + "\n");
+            try {
+                Socket conSocket = welcomeSocket.accept();
+                BufferedReader inFromClient =
+                        new BufferedReader(new InputStreamReader(conSocket.getInputStream()));
+                DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
+                inval = Integer.parseInt(inFromClient.readLine());
+                System.out.print("recieved: " + inval);
+                outval = Main.fibonacci(inval);
+                System.out.println("send: " + outval);
+                outToClient.writeBytes(outval + "\n");
+            } catch(NumberFormatException e){
+                System.out.println("recieved int is not valid");
+            }
         }
     }
 }
