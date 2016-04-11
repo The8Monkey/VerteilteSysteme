@@ -1,6 +1,5 @@
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -22,7 +21,7 @@ public class TCPServer {
                 DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
                 inval = Integer.parseInt(inFromClient.readLine());
                 System.out.print("recieved: " + inval);
-                outval = Main.fibonacci(inval);
+                outval = Fibonacci.fibonacci(inval);
                 System.out.println("send: " + outval);
                 outToClient.writeBytes(outval + "\n");
             } catch(NumberFormatException e){

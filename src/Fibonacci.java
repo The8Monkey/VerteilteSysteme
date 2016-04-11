@@ -1,4 +1,4 @@
-public class Main {
+public class Fibonacci {
     public static void main(String[] args) {
         System.out.println("this is figabuette:");
         for(int i = 1; i < 11; i++){
