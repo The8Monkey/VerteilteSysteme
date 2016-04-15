@@ -20,7 +20,7 @@ public class TCPServer {
                         new BufferedReader(new InputStreamReader(conSocket.getInputStream()));
                 DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
                 inval = Integer.parseInt(inFromClient.readLine());
-                System.out.print("recieved: " + inval);
+                System.out.print("recieved: " + inval+ "\n");
                 outval = Fibonacci.fibonacci(inval);
                 System.out.println("send: " + outval);
                 outToClient.writeBytes(outval + "\n");
