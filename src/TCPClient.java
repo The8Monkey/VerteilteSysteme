@@ -23,7 +23,7 @@ public class TCPClient {
                 }
                 toServer.writeBytes(count + "\n");
                 countfib = Integer.parseInt(fromServer.readLine());
-                System.out.printf("fibotnatschi number at position %3d is: %5d %n", count, countfib);
+                System.out.printf("fibrotnatschi number at position %3d is: %5d %n", count, countfib);
             } catch(NumberFormatException e){
                 toServer.writeBytes("\n");
                 System.out.println("Please enter valid number");

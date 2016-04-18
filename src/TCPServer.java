@@ -12,10 +12,10 @@ public class TCPServer {
         int inval;
         int outval;
         ServerSocket welcomeSocket = new ServerSocket(1234);
-
+        Socket conSocket = null;
         while(true){
             try {
-                Socket conSocket = welcomeSocket.accept();
+                conSocket = welcomeSocket.accept();
                 BufferedReader inFromClient =
                         new BufferedReader(new InputStreamReader(conSocket.getInputStream()));
                 DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
@@ -26,6 +26,8 @@ public class TCPServer {
                 outToClient.writeBytes(outval + "\n");
             } catch(NumberFormatException e){
                 System.out.println("recieved int is not valid");
+            } finally {
+                conSocket.close();
             }
         }
     }
