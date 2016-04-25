@@ -11,7 +11,7 @@ public class TCPServer {
     public static void main(String[] args) throws Exception {
         int inval;
         int outval;
-        ServerSocket welcomeSocket = new ServerSocket(1234);
+        ServerSocket welcomeSocket = new ServerSocket(5678);
         Socket conSocket = null;
         while(true){
             try {
@@ -20,12 +20,15 @@ public class TCPServer {
                         new BufferedReader(new InputStreamReader(conSocket.getInputStream()));
                 DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
                 inval = Integer.parseInt(inFromClient.readLine());
+                if(inval < 0 | inval > 50){
+                    outToClient.writeBytes(-2 + "\n");
+                }
                 System.out.print("recieved: " + inval+ "\n");
                 outval = Fibonacci.fibonacci(inval);
                 System.out.println("send: " + outval);
                 outToClient.writeBytes(outval + "\n");
             } catch(NumberFormatException e){
-                System.out.println("recieved int is not valid");
+                System.err.println("recieved int is not valid");
             } finally {
                 conSocket.close();
             }
