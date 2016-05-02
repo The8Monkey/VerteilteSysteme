@@ -21,7 +21,7 @@ public class TCPServer {
                 DataOutputStream outToClient = new DataOutputStream(conSocket.getOutputStream());
                 inval = Integer.parseInt(inFromClient.readLine());
                 if(inval < 0 | inval > 50){
-                    outToClient.writeBytes(-2 + "\n");
+                    outToClient.writeBytes(TCPClient.ERRORCODE_2 + "\n");
                 }
                 System.out.print("recieved: " + inval+ "\n");
                 outval = Fibonacci.fibonacci(inval);
