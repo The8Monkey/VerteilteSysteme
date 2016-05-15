@@ -77,7 +77,7 @@ public class TCPClient {
                         System.err.println("disconnected - Application terminated");
                         break loop;
                     default:
-                        System.out.println("please enter valid prompt, type \"help\" if youre stupid");
+                        System.out.println("please enter valid prompt, type \"help\" if you're stupid");
                         toServer.writeBytes("\n");
                         break;
                 }
