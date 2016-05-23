@@ -1,10 +1,13 @@
 package ubg3;
 
 import java.lang.reflect.Array;
+import java.nio.file.AccessDeniedException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.AccessControlException;
 import java.util.*;
 
 /**
@@ -18,7 +21,7 @@ public class PinnwandServer extends UnicastRemoteObject implements PinnwandInter
             System.setSecurityManager(new SecurityManager());
         }
         try{
-            final int lifeTime = 10000;
+            final int lifeTime = 100000;
 
             String name = "pinnwand-server";
             PinnwandInterface pinnwand = new PinnwandServer(name,"password",lifeTime);
@@ -41,7 +44,7 @@ public class PinnwandServer extends UnicastRemoteObject implements PinnwandInter
     protected final String nameOfService;
     private final String password;
     protected HashMap<Long, String> messages;
-    private boolean loggedIn;
+    private ArrayList<String> clients;
 
 
     public PinnwandServer(String nameOfService, String password, int lifeTime) throws RemoteException{
@@ -50,40 +53,51 @@ public class PinnwandServer extends UnicastRemoteObject implements PinnwandInter
         this.password = password;
         this.lifeTime = lifeTime;
         messages = new HashMap<Long, String>();
-        loggedIn = false;
+        clients = new ArrayList<>();
     }
 
     @Override
     public int login(String password) throws RemoteException {
-        if(this.password.equals(password)){
-            loggedIn = true;
+        if(this.password.equals(password) && password != null){
+
+            try {
+                clients.add(getClientHost());
+            } catch (ServerNotActiveException e) {
+                e.printStackTrace();
+            }
             return 1;
         }
-        loggedIn = false;
+        try {
+            if(clients.contains(getClientHost())){
+                clients.remove(getClientHost());
+            }
+        } catch (ServerNotActiveException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
     @Override
     public int getMessageCount() throws RemoteException {
-        updateMsgs();
-        return messages.size();
+        if(updateMsgs()) return messages.size();
+        return -1;
     }
 
     @Override
     public String[] getMessages() throws RemoteException {
-        updateMsgs();
-        return messages.values().toArray(new String[messages.values().size()]);
+        if(updateMsgs()) return messages.values().toArray(new String[messages.values().size()]);
+        return null;
     }
 
     @Override
-    public String getMessage(int index) throws RemoteException {
-        updateMsgs();
-        return messages.values().toArray(new String[messages.values().size()])[index];
+    public String getMessage(int index) throws RemoteException, ArrayIndexOutOfBoundsException {
+        if(updateMsgs()) return messages.values().toArray(new String[messages.values().size()])[index];
+        return null;
     }
 
     @Override
     public boolean putMessage(String msg) throws RemoteException {
-        if(updateMsgs() && msg.length() < MAX_LENGTH && loggedIn){
+        if(updateMsgs() && msg.length() < MAX_LENGTH){
             messages.put(System.currentTimeMillis(), msg);
         } else {
             return false;
@@ -91,15 +105,27 @@ public class PinnwandServer extends UnicastRemoteObject implements PinnwandInter
         return true;
     }
 
-    //returns true, is maximum count of messages isnt reached yet
+    //returns false, if maximum count of messages is reached, or user isn't logged in
     private boolean updateMsgs() throws RemoteException {
         Long current = System.currentTimeMillis();
-        for(Long t : messages.keySet()){
-            if(current - t > lifeTime){
-                System.out.println("message: \"" + messages.get(t) + "\" is outdated and will be removed");
-                messages.remove(t);
+
+        try {
+            if(!clients.contains(getClientHost())) throw new AccessControlException("not logged in");
+        } catch (ServerNotActiveException e) {
+            e.printStackTrace();
+        }
+
+        Iterator it = messages.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            if(current - (Long)pair.getKey() > lifeTime){
+                System.out.println("message: \"" + pair.getValue() + "\" is outdated and will be removed");
+                it.remove();
             }
         }
+
+
+
         return messages.size() < MAX_MSGCOUNT;
     }
 }
