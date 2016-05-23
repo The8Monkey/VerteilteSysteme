@@ -13,6 +13,27 @@ import java.util.*;
  */
 public class PinnwandServer extends UnicastRemoteObject implements PinnwandInterface {
 
+    public static void main(String[] args){
+        if(System.getSecurityManager() == null){
+            System.setSecurityManager(new SecurityManager());
+        }
+        try{
+            final int lifeTime = 10000;
+
+            String name = "pinnwand-server";
+            PinnwandInterface pinnwand = new PinnwandServer(name,"password",lifeTime);
+
+            final int port = 1337;
+
+            Registry registry = LocateRegistry.createRegistry(port);
+            registry.rebind(name,pinnwand);
+            System.out.println("pinnwand bound to port: " + port);
+        } catch (Exception e) {
+            System.err.println("Something didnt work with the server");
+            e.printStackTrace();
+        }
+    }
+
     public final int MAX_LENGTH = 160;
     public final int MAX_MSGCOUNT = 20;
 
@@ -80,27 +101,5 @@ public class PinnwandServer extends UnicastRemoteObject implements PinnwandInter
             }
         }
         return messages.size() < MAX_MSGCOUNT;
-    }
-
-    public static void main(String[] args){
-        if(System.getSecurityManager() == null){
-            System.setSecurityManager(new SecurityManager());
-        }
-        try{
-            final String password ="password";
-            final int lifeTime = 10000;
-
-            String name = "pinnwand-server";
-            PinnwandInterface pinnwand = new PinnwandServer(name,"password",lifeTime);
-
-            final int port = 1337;
-
-            Registry registry = LocateRegistry.createRegistry(port);
-            registry.rebind(name,pinnwand);
-            System.out.println("pinnwand bound to port: " + port);
-        } catch (Exception e) {
-            System.err.println("Something didnt work with the server");
-            e.printStackTrace();
-        }
     }
 }

@@ -84,6 +84,7 @@ public class PinnwandClient {
                         System.out.println("Possible Commands:");
                         System.out.println("help - shows this");
                         System.out.println("login (password) - log in to post messages");
+                        System.out.println("put (message) - posts a message on this pinnwand (you have to be logged in)");
                         System.out.println("get (index optional) - posts all messages or the one with given index");
                         System.out.println("exit - terminated this client");
                         break;
