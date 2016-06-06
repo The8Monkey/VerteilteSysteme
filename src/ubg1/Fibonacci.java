@@ -1,3 +1,5 @@
+package ubg1;
+
 public class Fibonacci {
     public static void main(String[] args) {
         System.out.println("this is figabuette:");
