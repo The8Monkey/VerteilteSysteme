@@ -4,6 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import jdk.nashorn.internal.runtime.JSONListAdapter;
 
+import java.lang.reflect.Array;
+
 /**
  * Created by nieli on 30-May-16.
  */
@@ -17,8 +19,15 @@ public class JSONConverter {
         return jsonArray;
     }
 
-    public String[] toArray(JsonArray a){
-        return null;
+    public String[] toArray(JsonArray jsonArray){
+        if(jsonArray==null) {
+            return null;
+        }
+        String[] stringArray = new String[jsonArray.size()];
+        for(int i=0; i<stringArray.length; i++){
+            stringArray[i]= jsonArray.get(i).toString();
+        }
+        return stringArray;
     }
 
 
