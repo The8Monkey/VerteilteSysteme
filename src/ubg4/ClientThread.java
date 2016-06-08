@@ -11,8 +11,6 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.sun.org.apache.xml.internal.serializer.utils.Utils.messages;
-
 
 class ClientThread extends Thread {
 
@@ -80,19 +78,17 @@ class ClientThread extends Thread {
                         /* Welcome the new the client. */
                         login = true;
                         Server.log("Client with the name:" + name + " has connected to the server.");
-                        os.println("Welcome " + name
-                                + " to our chat room.\n Type help to see the commands.");
+                        os.println("Welcome " + name + " to our chat room.\nType help to see the commands.");
                         synchronized (this) {
                             for (int i = 0; i < maxClientsCount; i++) {
                                 if (threads[i] != null && threads[i] == this) {
-                                    clientName = "@" + name;
+                                    clientName = name;
                                     break;
                                 }
                             }
                             for (int i = 0; i < maxClientsCount; i++) {
-                                if (threads[i] != null && threads[i] != this) {
-                                    threads[i].os.println("*** A new user " + name
-                                            + " entered the chat room !!! ***");
+                                if (threads[i] != null && threads[i] != this && threads[i].login) {
+                                    threads[i].os.println("*** A new user " + name + " entered the chat room !!! ***");
                                 }
                             }
                         }
@@ -119,7 +115,7 @@ class ClientThread extends Thread {
                         }
                         synchronized (this) {
                             for (int i = 0; i < maxClientsCount; i++) {
-                                if (threads[i] != null && threads[i].clientName != null) {
+                                if (threads[i] != null && threads[i].clientName != null && threads[i].login) {
                                     threads[i].os.println("<" + name + "> " + msgAll);
                                 }
                             }
@@ -214,10 +210,8 @@ class ClientThread extends Thread {
             }
             synchronized (this) {
                 for (int i = 0; i < maxClientsCount; i++) {
-                    if (threads[i] != null && threads[i] != this
-                            && threads[i].clientName != null) {
-                        threads[i].os.println("*** The user " + name
-                                + " is leaving the chat room !!! ***");
+                    if (threads[i] != null && threads[i] != this && threads[i].clientName != null && threads[i].login) {
+                        threads[i].os.println("*** The user " + name + " is leaving the chat room !!! ***");
                     }
                 }
             }
@@ -226,8 +220,7 @@ class ClientThread extends Thread {
             Server.clientName.remove(name);
 
       /*
-       * Clean up. Set the current thread variable to null so that a new client
-       * could be accepted by the server.
+       * Clean up. Set the current thread variable to null so that a new client could be accepted by the server.
        */
             synchronized (this) {
                 for (int i = 0; i < maxClientsCount; i++) {
