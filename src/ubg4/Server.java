@@ -1,14 +1,12 @@
 package ubg4;
 
-
-import java.io.DataInputStream;
 import java.io.PrintStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
 
 public class Server {
 
@@ -16,15 +14,18 @@ public class Server {
     private static ServerSocket serverSocket = null;
     // The client socket.
     private static Socket clientSocket = null;
+    public static HashMap<Long, String> messages;
 
-    public static List<String> clientName = new ArrayList<>();
+    public static List<String> clientName;
 
     // This chat server can accept up to maxClientsCount clients' connections.
-    private static final int maxClientsCount = 10;
+    private static final int maxClientsCount = 5;
     private static final ClientThread[] threads = new ClientThread[maxClientsCount];
 
     public static void main(String args[]) {
 
+        messages = new HashMap<Long, String>();
+        clientName = new ArrayList<>();
         // The default port number.
         int portNumber = 8090;
         if (args.length < 1) {

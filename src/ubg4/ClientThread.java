@@ -1,13 +1,22 @@
 package ubg4;
 
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.rmi.RemoteException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Iterator;
+import java.util.Map;
+
+import static com.sun.org.apache.xml.internal.serializer.utils.Utils.messages;
 
 
 class ClientThread extends Thread {
 
+    final int lifeTime = 100000;
     private String clientName = null;
     private DataInputStream is = null;
     private PrintStream os = null;
@@ -55,6 +64,10 @@ class ClientThread extends Thread {
                         os.println("notes: to see all notes.");
                         break;
                     case "login":
+                        if (login) {
+                            os.println("You are already connected.");
+                            break;
+                        }
                         name = in[1];
                         if (Server.clientName.contains(name)) {
                             os.println("The name you try to use is already taken. Please try an other name.");
@@ -63,7 +76,7 @@ class ClientThread extends Thread {
                             os.println("The name should not contain '@' character.");
                         }
 
-                        Server.clientName.add(Server.clientName.size(),name);
+                        Server.clientName.add(Server.clientName.size(), name);
                         /* Welcome the new the client. */
                         login = true;
                         Server.log("Client with the name:" + name + " has connected to the server.");
@@ -85,8 +98,16 @@ class ClientThread extends Thread {
                         }
                         break;
                     case "logout":
+                        if (!login) {
+                            os.println("Please login before you logout.");
+                            break;
+                        }
                         break loop;
                     case "notify":
+                        if (!login) {
+                            os.println("You need to login first!");
+                            break;
+                        }
                         /* The message is public, broadcast it to all other clients. */
                         String msgAll = "";
                         for (int i = 1; i < in.length; i++) {
@@ -105,7 +126,10 @@ class ClientThread extends Thread {
                         }
                         break;
                     case "chat":
-
+                        if (!login) {
+                            os.println("You need to login first!");
+                            break;
+                        }
                         String[] words = new String[2];
                         words[0] = in[1];
                         String msg = "";
@@ -128,6 +152,60 @@ class ClientThread extends Thread {
                                     this.os.println(">" + name + "> " + words[1]);
                                 }
                             }
+                        }
+                        break;
+                    case "who":
+                        if (!login) {
+                            os.println("You need to login first!");
+                            break;
+                        }
+                        for (String s : Server.clientName) {
+                            os.println(s);
+                        }
+                        break;
+                    case "time":
+                        if (!login) {
+                            os.println("You need to login first!");
+                            break;
+                        }
+                        os.println(new SimpleDateFormat("dd.MM.yyyy HH:mm").format(Calendar.getInstance().getTime()));
+                        break;
+                    case "ls":
+                        File folder = new File(in[1]);
+                        File[] listOfFiles = folder.listFiles();
+
+                        for (int i = 0; i < listOfFiles.length; i++) {
+                            if (listOfFiles[i].isFile()) {
+                                os.println("File " + listOfFiles[i].getName());
+                            } else if (listOfFiles[i].isDirectory()) {
+                                os.println("Directory " + listOfFiles[i].getName());
+                            }
+                        }
+                        break;
+                    case "note":
+                        if (!login) {
+                            os.println("You need to login first!");
+                            break;
+                        }
+                        String note = "";
+                        for (int i = 1; i < in.length; i++) {
+                            if (i == 1) {
+                                note = in[1];
+                            } else {
+                                note += " " + in[i];
+                            }
+                        }
+                        putMessage(note);
+                        break;
+                    case "notes":
+                        if (!login) {
+                            os.println("You need to login first!");
+                            break;
+                        }
+                        updateMsgs();
+                        os.println("All Messages:");
+                        for (String s : getMessages()) {
+                            os.println(s);
                         }
                         break;
                     default:
@@ -165,6 +243,29 @@ class ClientThread extends Thread {
             os.close();
             clientSocket.close();
         } catch (IOException e) {
+        }
+    }
+
+    private String[] getMessages() throws RemoteException {
+        return Server.messages.values().toArray(new String[Server.messages.values().size()]);
+    }
+
+    private boolean putMessage(String msg) throws RemoteException {
+
+        Server.messages.put(System.currentTimeMillis(), msg);
+
+        return true;
+    }
+
+    private void updateMsgs() throws RemoteException {
+        Long current = System.currentTimeMillis();
+
+        Iterator it = Server.messages.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            if (current - (Long) pair.getKey() > lifeTime) {
+                it.remove();
+            }
         }
     }
 }
