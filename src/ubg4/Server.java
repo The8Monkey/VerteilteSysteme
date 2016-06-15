@@ -1,5 +1,7 @@
 package ubg4;
 
+import com.google.gson.Gson;
+
 import java.io.PrintStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -61,7 +63,10 @@ public class Server {
                 }
                 if (i == maxClientsCount) {
                     PrintStream os = new PrintStream(clientSocket.getOutputStream());
-                    os.println("Server too busy. Try later.");
+                    Gson send1 = new Gson();
+                    String[] con8={"Server full!"};
+                    String json1 = send1.toJson(new Answer(503,000,con8));
+                    os.println(json1);
                     os.close();
                     clientSocket.close();
                 }
