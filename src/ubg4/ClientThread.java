@@ -1,5 +1,10 @@
 package ubg4;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -47,38 +52,38 @@ class ClientThread extends Thread {
 
             loop:
             while (true) {
-                String in[] = is.readLine().split(" ");
-                switch (in[0].toLowerCase()) {
+                String in[] ={"","",""};//is.readLine().split(" ");
+                JsonObject gson = new Gson().fromJson(is.readLine(), JsonObject.class);
+                switch (gson.get("cmd").getAsString()) {
                     case "help":
-                        os.println("Commands:");
-                        os.println("login <username>: to login.");
-                        os.println("logout: to logout.");
-                        os.println("who: to get the list of all user.");
-                        os.println("time: to get the time.");
-                        os.println("ls <path>: to show all files in the path.");
-                        os.println("chat <username> <message>: to send th message to a specific user.");
-                        os.println("notify <message>: to notify all user.");
-                        os.println("note <text>: to leave a note.");
-                        os.println("notes: to see all notes.");
+                        String com[] = {"Commands:", "login <username>: to login.", "logout: to logout.","who: to get the list of all user.",
+                                "time: to get the time.", "ls <path>: to show all files in the path.", "chat <username> <message>: to send th message to a specific user.",
+                                "notify <message>: to notify all user.", "note <text>: to leave a note.", "notes: to see all notes."};
+                        send(new Answer(200,gson.get("seq").getAsInt(),com));
                         break;
                     case "login":
                         if (login) {
-                            os.println("You are already connected.");
+                            String[] con={"You are already connected."};
+                            send(new Answer(402,gson.get("seq").getAsInt(),con));
                             break;
                         }
-                        name = in[1];
+                        JsonArray data = gson.get("params").getAsJsonArray();
+                        name = data.get(0).getAsString();
                         if (Server.clientName.contains(name)) {
-                            os.println("The name you try to use is already taken. Please try an other name.");
+                            String[] con={"The name you try to use is already taken. Please try an other name."};
+                            send(new Answer(400,gson.get("seq").getAsInt(),con));
                             continue loop;
                         } else if (name.contains("@")) {
-                            os.println("The name should not contain '@' character.");
+                            String[] con={"The name should not contain '@' character."};
+                            send(new Answer(400,gson.get("seq").getAsInt(),con));
                         }
 
                         Server.clientName.add(Server.clientName.size(), name);
                         /* Welcome the new the client. */
                         login = true;
                         Server.log("Client with the name:" + name + " has connected to the server.");
-                        os.println("Welcome " + name + " to our chat room.\nType help to see the commands.");
+                        String[] con={"Welcome " + name + " to our chat room.\n" + "Type help to see the commands."};
+                        send(new Answer(400,gson.get("seq").getAsInt(),con));
                         synchronized (this) {
                             for (int i = 0; i < maxClientsCount; i++) {
                                 if (threads[i] != null && threads[i] == this) {
@@ -88,134 +93,171 @@ class ClientThread extends Thread {
                             }
                             for (int i = 0; i < maxClientsCount; i++) {
                                 if (threads[i] != null && threads[i] != this && threads[i].login) {
-                                    threads[i].os.println("*** A new user " + name + " entered the chat room !!! ***");
+                                    String[] con1={"*** A new user " + name + " entered the chat room !!! ***"};
+                                    threads[i].send(new Answer(200,gson.get("seq").getAsInt(),con1));
                                 }
                             }
                         }
                         break;
                     case "logout":
                         if (!login) {
-                            os.println("Please login before you logout.");
+                            String[] con1={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con1));
                             break;
                         }
                         break loop;
                     case "notify":
                         if (!login) {
-                            os.println("You need to login first!");
+                            String[] con1={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con1));
                             break;
                         }
                         /* The message is public, broadcast it to all other clients. */
-                        String msgAll = "";
-                        for (int i = 1; i < in.length; i++) {
-                            if (i == 1) {
-                                msgAll = in[1];
-                            } else {
-                                msgAll += " " + in[i];
-                            }
-                        }
+
                         synchronized (this) {
                             for (int i = 0; i < maxClientsCount; i++) {
                                 if (threads[i] != null && threads[i].clientName != null && threads[i].login) {
-                                    threads[i].os.println("<" + name + "> " + msgAll);
+                                    JsonArray message = gson.get("params").getAsJsonArray();
+                                    String s="";
+                                    for (int j=0; j<message.size()+1;j++) {
+                                        if(j==0){
+                                            s="<" + name + "> ";
+                                        }else{
+                                            s+=message.get(j-1).getAsString()+ " ";
+                                        }
+                                    }
+                                    String[] con1 = {s};
+                                    threads[i].send(new Answer(401,gson.get("seq").getAsInt(),con1));
                                 }
                             }
                         }
                         break;
                     case "chat":
                         if (!login) {
-                            os.println("You need to login first!");
+                            String[] con1={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con1));
                             break;
                         }
-                        String[] words = new String[2];
-                        words[0] = in[1];
-                        String msg = "";
-                        for (int i = 2; i < in.length; i++) {
-                            if (i == 2) {
-                                msg = in[2];
-                            } else {
-                                msg += " " + in[i];
+                        String user = null;
+                        JsonArray message = gson.get("params").getAsJsonArray();
+                        String s="<" + name + "> ";
+                        for (int j=0; j<message.size()+1;j++) {
+                            if(j==0){
+                                user=message.get(j).getAsString();
+                            }else{
+                                s+=message.get(j-1).getAsString()+ " ";
                             }
                         }
-                        words[1] = msg;
-                        if (words.length > 1 && words[1] != null) {
-                            if (!words[1].isEmpty()) {
+                        String[] con1 = {s};
+
+                        if (con1.length == 1 && user != null) {
+
                                 synchronized (this) {
-                                    int index = Server.clientName.indexOf(words[0]);
-                                    threads[index].os.println("<" + name + "> " + words[1]);
-                                    /**
-                                     * Echo this message to let the client know the private message was sent.
-                                     */
-                                    this.os.println(">" + name + "> " + words[1]);
+                                    if(Server.clientName.contains(user)){
+                                        int index = Server.clientName.indexOf(user);
+                                        threads[index].send(new Answer(200,gson.get("seq").getAsInt(),con1));
+                                        /**
+                                         * Echo this message to let the client know the private message was sent.
+                                         */
+                                        String[] con3={">" + name + "> " + con1};
+                                        send(new Answer(200,gson.get("seq").getAsInt(),con3));
+                                    }else{
+                                        String[] con4={"No user found with the name:"+user};
+                                        send(new Answer(400,gson.get("seq").getAsInt(),con4));
+                                        break;
+                                    }
                                 }
                             }
-                        }
+
                         break;
                     case "who":
                         if (!login) {
-                            os.println("You need to login first!");
+                            String[] con4={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con4));
                             break;
                         }
-                        for (String s : Server.clientName) {
-                            os.println(s);
+                        String[] users = new String[Server.clientName.size()];
+                        for (int i = 0;i< Server.clientName.size();i++) {
+                            users[i]=Server.clientName.get(i);
                         }
+                        send(new Answer(200,gson.get("seq").getAsInt(),users));
                         break;
                     case "time":
                         if (!login) {
-                            os.println("You need to login first!");
+                            String[] con5={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con5));
                             break;
                         }
-                        os.println(new SimpleDateFormat("dd.MM.yyyy HH:mm").format(Calendar.getInstance().getTime()));
+                        String[] con4={new SimpleDateFormat("dd.MM.yyyy HH:mm").format(Calendar.getInstance().getTime())};
+                        send(new Answer(401,gson.get("seq").getAsInt(),con4));
                         break;
                     case "ls":
-                        File folder = new File(in[1]);
-                        File[] listOfFiles = folder.listFiles();
-
-                        for (int i = 0; i < listOfFiles.length; i++) {
-                            if (listOfFiles[i].isFile()) {
-                                os.println("File " + listOfFiles[i].getName());
-                            } else if (listOfFiles[i].isDirectory()) {
-                                os.println("Directory " + listOfFiles[i].getName());
-                            }
+                        if (!login) {
+                            String[] con6={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con6));
+                            break;
                         }
+                        JsonArray para = gson.get("params").getAsJsonArray();
+
+                        File folder = new File(para.get(0).getAsString());
+                        if(folder.exists()){
+                            File[] listOfFiles = folder.listFiles();
+
+                            String[] dir = new String[listOfFiles.length];
+
+                            for (int i = 0; i < listOfFiles.length; i++) {
+                                if (listOfFiles[i].isFile()) {
+                                    dir[i]="File " + listOfFiles[i].getName();
+                                } else if (listOfFiles[i].isDirectory()) {
+                                    dir[i]="Directory " + listOfFiles[i].getName();
+                                }
+                            }
+                            send(new Answer(200,gson.get("seq").getAsInt(),dir));
+                        }else{
+                            String[] con6={"Wrong path:"+para.get(0).getAsString()};
+                            send(new Answer(404,gson.get("seq").getAsInt(),con6));
+                        }
+
                         break;
                     case "note":
                         if (!login) {
-                            os.println("You need to login first!");
+                            String[] con7={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con7));
                             break;
                         }
                         String note = "";
-                        for (int i = 1; i < in.length; i++) {
-                            if (i == 1) {
-                                note = in[1];
-                            } else {
-                                note += " " + in[i];
+                        JsonArray notes = gson.get("params").getAsJsonArray();
+                        if(notes.size()>0){
+                            for (JsonElement s1: notes) {
+                                note+=s1.getAsString()+ " ";
                             }
                         }
                         putMessage(note);
                         break;
                     case "notes":
                         if (!login) {
-                            os.println("You need to login first!");
+                            String[] con8={"You need to login first!"};
+                            send(new Answer(401,gson.get("seq").getAsInt(),con8));
                             break;
                         }
                         updateMsgs();
-                        os.println("All Messages:");
-                        for (String s : getMessages()) {
-                            os.println(s);
-                        }
+                        send(new Answer(200, gson.get("seq").getAsInt(),getMessages()));
                         break;
                     default:
-                        os.println("Type \"help\" to see all commands.");
+                        String[] con7={"Type help to see all commands."};
+                        send(new Answer(400,gson.get("seq").getAsInt(),con7));
                 }
             }
             synchronized (this) {
                 for (int i = 0; i < maxClientsCount; i++) {
                     if (threads[i] != null && threads[i] != this && threads[i].clientName != null && threads[i].login) {
-                        threads[i].os.println("*** The user " + name + " is leaving the chat room !!! ***");
+                        String[] con7={"*** The user " + name + " is leaving the chat room !!! ***"};
+                        threads[i].send(new Answer(200,000,con7));
                     }
                 }
             }
-            os.println("*** Bye " + name + " ***");
+            String[] con7={"*** Bye " + name + " ***"};
+            send(new Answer(204,000,con7));
             Server.log("The client " + name + " has left the server.");
             Server.clientName.remove(name);
 
@@ -237,6 +279,12 @@ class ClientThread extends Thread {
             clientSocket.close();
         } catch (IOException e) {
         }
+    }
+
+    private void send(Answer a){
+        Gson send1 = new Gson();
+        String json1 = send1.toJson(a);
+        os.println(json1);
     }
 
     private String[] getMessages() throws RemoteException {

@@ -1,5 +1,10 @@
 package ubg4;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.io.DataInputStream;
 import java.io.PrintStream;
 import java.io.BufferedReader;
@@ -16,6 +21,8 @@ public class Client implements Runnable {
     private static PrintStream os = null;
     // The input stream
     private static DataInputStream is = null;
+
+    private static int seq = (int) Math.random()*3;
 
     private static BufferedReader inputLine = null;
     private static boolean closed = false;
@@ -61,7 +68,20 @@ public class Client implements Runnable {
         /* Create a thread to read from the server. */
                 new Thread(new Client()).start();
                 while (!closed) {
-                    os.println(inputLine.readLine().trim());
+                    String in[] = inputLine.readLine().split(" ");
+                    String msg[] = new String[in.length-1];
+                    for (int i = 1; i < in.length; i++) {
+                        if (i == 1) {
+                            msg[0] = in[1];
+                        } else {
+                            msg[i-1] = in[i];
+                        }
+                    }
+                    Gson gson = new Gson();
+                    Request req = new Request(seq ,in[0],msg);
+                    String json = gson.toJson(req);
+                    os.println(json);
+                    seq++;
                 }
         /*
          * Close the output stream, close the input stream, close the socket.
@@ -85,11 +105,16 @@ public class Client implements Runnable {
      * Keep on reading from the socket till we receive "Bye" from the
      * server. Once we received that then we want to break.
      */
-        String responseLine;
+        JsonObject input;
         try {
-            while ((responseLine = is.readLine()) != null) {
-                System.out.println(responseLine);
-                if (responseLine.indexOf("*** Bye") != -1)
+            while ((input = new Gson().fromJson(is.readLine(), JsonObject.class)) != null) {
+                JsonArray data = input.get("data").getAsJsonArray();
+                if(data.size()>0){
+                    for (JsonElement s: data) {
+                        System.out.println(s.getAsString());
+                    }
+                }
+                if (input.get("status").getAsInt()==204)
                     break;
             }
             closed = true;
