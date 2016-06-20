@@ -52,8 +52,9 @@ class ClientThread extends Thread {
 
             loop:
             while (true) {
-                String in[] ={"","",""};//is.readLine().split(" ");
-                JsonObject gson = new Gson().fromJson(is.readLine(), JsonObject.class);
+                JsonObject json = new Gson().fromJson(is.readLine(), JsonObject.class);
+                String input = json.get("req").getAsString().replace("/","");
+                JsonObject gson = new Gson().fromJson(input, JsonObject.class);
                 switch (gson.get("cmd").getAsString()) {
                     case "help":
                         String com[] = {"Commands:", "login <username>: to login.", "logout: to logout.","who: to get the list of all user.",

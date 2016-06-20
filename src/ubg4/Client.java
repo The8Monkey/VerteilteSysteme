@@ -80,7 +80,11 @@ public class Client implements Runnable {
                     Gson gson = new Gson();
                     Request req = new Request(seq ,in[0],msg);
                     String json = gson.toJson(req);
-                    os.println(json);
+                    JsonObject jo = new JsonObject();
+                    jo.addProperty("req", json);
+                    Gson bla = new Gson();
+                    String blo = bla.toJson(jo);
+                    os.println(blo);
                     seq++;
                 }
         /*
