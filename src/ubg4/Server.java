@@ -1,6 +1,7 @@
 package ubg4;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import java.io.PrintStream;
 import java.io.IOException;
@@ -58,6 +59,15 @@ public class Server {
                 for (i = 0; i < maxClientsCount; i++) {
                     if (threads[i] == null) {
                         (threads[i] = new ClientThread(clientSocket, threads)).start();
+                        PrintStream os = new PrintStream(clientSocket.getOutputStream());
+                        Gson send1 = new Gson();
+                        String[] con8={"Welcome to the Java ChatServer"};
+                        String json1 = send1.toJson(new Answer(200,0,con8));
+                        JsonObject jo = new JsonObject();
+                        jo.addProperty("res", json1);
+                        Gson bla = new Gson();
+                        String blo = bla.toJson(jo);
+                        os.println(blo);
                         break;
                     }
                 }
@@ -65,8 +75,12 @@ public class Server {
                     PrintStream os = new PrintStream(clientSocket.getOutputStream());
                     Gson send1 = new Gson();
                     String[] con8={"Server full!"};
-                    String json1 = send1.toJson(new Answer(503,000,con8));
-                    os.println(json1);
+                    String json1 = send1.toJson(new Answer(503,0,con8));
+                    JsonObject jo = new JsonObject();
+                    jo.addProperty("res", json1);
+                    Gson bla = new Gson();
+                    String blo = bla.toJson(jo);
+                    os.println(blo);
                     os.close();
                     clientSocket.close();
                 }

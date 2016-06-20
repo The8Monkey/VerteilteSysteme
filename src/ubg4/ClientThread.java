@@ -261,9 +261,9 @@ class ClientThread extends Thread {
             Server.log("The client " + name + " has left the server.");
             Server.clientName.remove(name);
 
-      /*
+      /**
        * Clean up. Set the current thread variable to null so that a new client could be accepted by the server.
-       */
+       **/
             synchronized (this) {
                 for (int i = 0; i < maxClientsCount; i++) {
                     if (threads[i] == this) {
@@ -271,9 +271,9 @@ class ClientThread extends Thread {
                     }
                 }
             }
-      /*
+      /**
        * Close the output stream, close the input stream, close the socket.
-       */
+       **/
             is.close();
             os.close();
             clientSocket.close();
@@ -284,7 +284,11 @@ class ClientThread extends Thread {
     private void send(Answer a){
         Gson send1 = new Gson();
         String json1 = send1.toJson(a);
-        os.println(json1);
+        JsonObject jo = new JsonObject();
+        jo.addProperty("res", json1);
+        Gson bla = new Gson();
+        String blo = bla.toJson(jo);
+        os.println(blo);
     }
 
     private String[] getMessages() throws RemoteException {

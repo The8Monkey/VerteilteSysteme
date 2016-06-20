@@ -108,13 +108,15 @@ public class Client implements Runnable {
         JsonObject input;
         try {
             while ((input = new Gson().fromJson(is.readLine(), JsonObject.class)) != null) {
-                JsonArray data = input.get("data").getAsJsonArray();
-                if(data.size()>0){
-                    for (JsonElement s: data) {
+                String data = input.get("res").getAsString().replace("/","");
+                JsonObject g = new Gson().fromJson(data, JsonObject.class);
+                JsonArray text = g.get("data").getAsJsonArray();
+                if(text.size()>0){
+                    for (JsonElement s: text) {
                         System.out.println(s.getAsString());
                     }
                 }
-                if (input.get("status").getAsInt()==204)
+                if (g.get("status").getAsInt()==204)
                     break;
             }
             closed = true;
