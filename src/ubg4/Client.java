@@ -4,12 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
-import java.io.DataInputStream;
-import java.io.PrintStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -18,11 +17,12 @@ public class Client implements Runnable {
     // The client socket
     private static Socket clientSocket = null;
     // The output stream
-    private static PrintStream os = null;
+    private static PrintWriter os = null;
     // The input stream
-    private static DataInputStream is = null;
+    private static BufferedReader is = null;
 
-    private static int seq = (int) Math.random()*3;
+    private JSONParser parser = new JSONParser();
+    private static int seq = (int) Math.random()*1000;
 
     private static BufferedReader inputLine = null;
     private static boolean closed = false;
@@ -49,8 +49,8 @@ public class Client implements Runnable {
         try {
             clientSocket = new Socket(host, portNumber);
             inputLine = new BufferedReader(new InputStreamReader(System.in));
-            os = new PrintStream(clientSocket.getOutputStream());
-            is = new DataInputStream(clientSocket.getInputStream());
+            os = new PrintWriter(clientSocket.getOutputStream());
+            is = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + host);
         } catch (IOException e) {
@@ -80,11 +80,8 @@ public class Client implements Runnable {
                     Gson gson = new Gson();
                     Request req = new Request(seq ,in[0],msg);
                     String json = gson.toJson(req);
-                    JsonObject jo = new JsonObject();
-                    jo.addProperty("req", json);
-                    Gson bla = new Gson();
-                    String blo = bla.toJson(jo);
-                    os.println(blo);
+                    os.println("{\"req\":"+json+"}");
+                    os.flush();
                     seq++;
                 }
         /*
@@ -94,7 +91,7 @@ public class Client implements Runnable {
                 is.close();
                 clientSocket.close();
             } catch (IOException e) {
-                System.err.println("IOException:  " + e);
+                System.err.println("IOException:test  " + e);
             }
         }
     }
@@ -109,23 +106,27 @@ public class Client implements Runnable {
      * Keep on reading from the socket till we receive "Bye" from the
      * server. Once we received that then we want to break.
      */
-        JsonObject input;
+        String input;
         try {
-            while ((input = new Gson().fromJson(is.readLine(), JsonObject.class)) != null) {
-                String data = input.get("res").getAsString().replace("/","");
-                JsonObject g = new Gson().fromJson(data, JsonObject.class);
-                JsonArray text = g.get("data").getAsJsonArray();
+            while ((input = is.readLine()) != null) {
+                Object o = parser.parse(input);
+                JSONObject json = (JSONObject) o;
+                //String input = json.get("req").getAsString();
+                JSONObject gson = (JSONObject) json.get("res");
+
+                JSONArray text = (JSONArray) gson.get("data");
                 if(text.size()>0){
-                    for (JsonElement s: text) {
-                        System.out.println(s.getAsString());
+                    for (Object s: text) {
+                        System.out.println(s.toString());
                     }
                 }
-                if (g.get("status").getAsInt()==204)
+                if (gson.get("status").toString()=="204"){
                     break;
+                }
             }
             closed = true;
-        } catch (IOException e) {
-            System.err.println("IOException:  " + e);
+        } catch (Exception e) {
+            System.err.println("IOException:  zujktzj" + e);
         }
     }
 }

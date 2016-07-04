@@ -3,8 +3,10 @@ package ubg4;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import java.io.DataOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -59,28 +61,33 @@ public class Server {
                 for (i = 0; i < maxClientsCount; i++) {
                     if (threads[i] == null) {
                         (threads[i] = new ClientThread(clientSocket, threads)).start();
-                        PrintStream os = new PrintStream(clientSocket.getOutputStream());
+                        System.out.println("new connection "+clientSocket.getInetAddress());
+                        PrintWriter os = new PrintWriter(clientSocket.getOutputStream());
                         Gson send1 = new Gson();
                         String[] con8={"Welcome to the Java ChatServer"};
                         String json1 = send1.toJson(new Answer(200,0,con8));
-                        JsonObject jo = new JsonObject();
+
+                        /**JsonObject jo = new JsonObject();
                         jo.addProperty("res", json1);
                         Gson bla = new Gson();
                         String blo = bla.toJson(jo);
-                        os.println(blo);
+                        **/
+                        os.println("{\"res\":"+json1+"}");
+                        os.flush();
                         break;
                     }
                 }
                 if (i == maxClientsCount) {
-                    PrintStream os = new PrintStream(clientSocket.getOutputStream());
+                    PrintWriter os = new PrintWriter(clientSocket.getOutputStream());
                     Gson send1 = new Gson();
                     String[] con8={"Server full!"};
                     String json1 = send1.toJson(new Answer(503,0,con8));
-                    JsonObject jo = new JsonObject();
+                    /**JsonObject jo = new JsonObject();
                     jo.addProperty("res", json1);
                     Gson bla = new Gson();
-                    String blo = bla.toJson(jo);
-                    os.println(blo);
+                    String blo = bla.toJson(jo);**/
+                    os.println("{\"res\":"+json1+"}");
+                    os.flush();
                     os.close();
                     clientSocket.close();
                 }
